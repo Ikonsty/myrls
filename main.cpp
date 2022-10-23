@@ -192,23 +192,18 @@ int main(int argc, char *argv[]) {
         while ((ent = readdir(dir)) != NULL) {
             // get the name of the file
             char* fileName = ent->d_name;
+
             // get the full path of the file
             char* filePath = (char*)malloc(strlen(curr_dir_name) + strlen(fileName) + 2);
             strcpy(filePath, curr_dir_name);
             strcat(filePath, "/");
             strcat(filePath, fileName);
+
             // get the information about the file
             stat(filePath, &buf);
-            // if it`s a directory, then add it to the stack
-            /*if (S_ISDIR(buf.st_mode)) {
-                if (strcmp(fileName, ".") != 0 && strcmp(fileName, "..") != 0) {
-                    stack[stack_size] = filePath;
-                    stack_size++;
-                }
-            }*/
+
             // print the information about the file
             stat(ent->d_name, &buf);
-            //  show all data about file lilke ls -l command
             //  check if buf is not empty
             if (buf.st_size != 0) {
                 std::cout << std::setw(10) << std::left << permissions(buf.st_mode)   //permissions
@@ -226,38 +221,5 @@ int main(int argc, char *argv[]) {
         // close the directory
         closedir(dir);
     }
-
-
-    /*if (argc == 1) {
-        dir = opendir(".");
-    } else {
-        dir = opendir(argv[1]);
-    }
-    if (dir != NULL) {
-        // show current directory name with ":" in the end
-        if (argc == 1) std::cout << "." << currentDir() << ":" << std::endl;
-        else std::cout << argv[1] << ":" << std::endl;
-
-        while ((ent = readdir(dir)) != NULL) {
-            stat(ent->d_name, &buf);
-            //  show all data about file lilke ls -l command
-            //  check if buf is not empty
-            if (buf.st_size != 0) {
-                std::cout << std::setw(10) << std::left << permissions(buf.st_mode)   //permissions
-                          << std::setw(18) << std::left << owner(buf.st_uid)             //owner
-                          << std::setw(8) << std::right << size(buf.st_size) << " "      //file size in bytes
-                          << std::setw(12) << std::left
-                          << data(buf.st_mtime)             //data of the last modification of the file
-                          << std::setw(12) << std::left
-                          << time(buf.st_mtime)             //time of the last modification of the file
-                          << std::setw(12) << std::left
-                          << name(buf.st_mode, ent->d_name) //file name //ent->d_name
-                          << std::endl;
-            }
-        }
-        closedir(dir);
-    } else {
-        std::cerr << "Error: could not open directory" << std::endl;
-    }
-    return 0;*/
+    return 0;
 }
