@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <pwd.h>
 #include <grp.h>
+#include <libc.h>
 
 // implementation of the ls -il command in C++ using the dirent.h library and stat.h library
 // to get the inode number, the file size of the file, owner and other data
@@ -93,6 +94,13 @@ char* name(mode_t type, char* name){
     return "?";
 }
 
+// return current dirrectory name
+char* currentDir(){
+    char cwd[1024];
+    getcwd(cwd, sizeof(cwd));
+    return cwd;
+}
+
 int main(int argc, char *argv[]) {
     DIR *dir;
     struct dirent *ent;
@@ -103,15 +111,25 @@ int main(int argc, char *argv[]) {
         dir = opendir(argv[1]);
     }
     if (dir != NULL) {
+        // show current directory name with ":" in the end
+        if (argc == 1) std::cout << "." << currentDir() << ":" << std::endl;
+        else std::cout << argv[1] << ":" << std::endl;
+
         while ((ent = readdir(dir)) != NULL) {
             stat(ent->d_name, &buf);
             //show all data about file lilke ls -l command
-            std::cout << std::setw(10) << std::left << permissions(buf.st_mode)   //permissions
-                        << std::setw(12) << std::left  << owner(buf.st_uid)             //owner
-                        << std::setw(8) << std::right  <<  size(buf.st_size ) << " "                //file size in bytes
-                        << std::setw(12) << std::left << data(buf.st_mtime)                 //data of the last modification of the file
-                        << std::setw(12) << std::left  << time(buf.st_mtime)             //time of the last modification of the file
-                        << std::setw(12) << std::left << name(buf.st_mode, ent->d_name) << std::endl;      //file name //ent->d_name
+            //check if buf is not empty
+            if (buf.st_size != 0) {
+                std::cout << std::setw(10) << std::left << permissions(buf.st_mode)   //permissions
+                          << std::setw(18) << std::left << owner(buf.st_uid)             //owner
+                          << std::setw(8) << std::right << size(buf.st_size) << " "                //file size in bytes
+                          << std::setw(12) << std::left
+                          << data(buf.st_mtime)                 //data of the last modification of the file
+                          << std::setw(12) << std::left
+                          << time(buf.st_mtime)             //time of the last modification of the file
+                          << std::setw(12) << std::left << name(buf.st_mode, ent->d_name)
+                          << std::endl;      //file name //ent->d_name
+            }
         }
         closedir(dir);
     } else {
