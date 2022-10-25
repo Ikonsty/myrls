@@ -4,7 +4,8 @@
 #include <iomanip>
 #include <pwd.h>
 #include <grp.h>
-#include <libc.h>
+#include <unistd.h>
+#include <string.h>
 
 // implementation of the ls -il command in C++ using the dirent.h library and stat.h library
 // to get the inode number, the file size of the file, owner and other data
@@ -59,14 +60,14 @@ char* time(time_t time){
 
 //  return if file is a directory, file or executable file
 char* type(mode_t type){
-    if (S_ISDIR(type)) return "d";
-    if (S_ISREG(type)) return "-";
-    if (S_ISLNK(type)) return "l";
-    if (S_ISCHR(type)) return "c";
-    if (S_ISBLK(type)) return "b";
-    if (S_ISFIFO(type)) return "p";
-    if (S_ISSOCK(type)) return "s";
-    return "?";
+    if (S_ISDIR(type)) return (char*)"d";
+    if (S_ISREG(type)) return (char*)"-";
+    if (S_ISLNK(type)) return (char*)"l";
+    if (S_ISCHR(type)) return (char*)"c";
+    if (S_ISBLK(type)) return (char*)"b";
+    if (S_ISFIFO(type)) return (char*)"p";
+    if (S_ISSOCK(type)) return (char*)"s";
+    return (char*)"?";
 }
 
 // return name of the file or directory by knowing its type
@@ -115,7 +116,7 @@ char* name(mode_t type, char* name, char* filePath, char **stack, int &stack_siz
         sprintf(nameval, "=%s", name);
         return nameval;
     }
-    return "?";
+    return (char*)"?";
 }
 
 // return current dirrectory name
@@ -186,7 +187,7 @@ int main(int argc, char *argv[]) {
 
         // show current directory name with ":" in the end
         std::cout << std::endl;
-        std::cout << "." << curr_dir_name << ":" << std::endl;
+        std::cout << "./" << curr_dir_name << ":" << std::endl;
 
         // iterate through the directory
         while ((ent = readdir(dir)) != NULL) {
