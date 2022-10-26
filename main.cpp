@@ -6,6 +6,9 @@
 #include <grp.h>
 #include <unistd.h>
 #include <string.h>
+#include <vector>
+#include <algorithm>
+#include <boost/algorithm/string.hpp>
 
 // implementation of the ls -il command in C++ using the dirent.h library and stat.h library
 // to get the inode number, the file size of the file, owner and other data
@@ -121,7 +124,7 @@ char* name(mode_t type, char* name, char* filePath, char **stack, int &stack_siz
 
 // return current dirrectory name
 char* currentDir(){
-    char cwd[1024];
+    char* cwd = new char[1024];
     getcwd(cwd, sizeof(cwd));
     return cwd;
 }
@@ -134,6 +137,14 @@ char* copy_string(char s[])
 
     strcpy(s2, s);
     return (char*)s2;
+}
+
+bool fileNameCmp (const std::vector<char*>& a, const std::vector<char*>& b) {
+    std::string a_fl = std::string(a[0]);
+    std::string b_fl = std::string(b[0]);
+    const auto result = mismatch(a_fl.cbegin(), a_fl.cend(), b_fl.cbegin(), b_fl.cend(), [](const unsigned char a_fl, const unsigned char b_fl){return tolower(a_fl) == tolower(b_fl);});
+
+    return result.second != b_fl.cend() && (result.first == a_fl.cend() || tolower(*result.first) < tolower(*result.second));
 }
 
 int main(int argc, char *argv[]) {
@@ -178,6 +189,9 @@ int main(int argc, char *argv[]) {
 
     // iterate through the stack while it is not empty
     while (stack_size > 0) {
+
+        std::vector<std::vector<char*>> currentDirFiles;
+
         // get the last directory from the stack
         auto curr_dir_name = stack[stack_size - 1];
         // remove the last directory from the stack
@@ -190,9 +204,12 @@ int main(int argc, char *argv[]) {
         std::cout << "./" << curr_dir_name << ":" << std::endl;
 
         // iterate through the directory
+
         while ((ent = readdir(dir)) != NULL) {
             // get the name of the file
             char* fileName = ent->d_name;
+
+            std::vector<char*> fileInfo;
 
             // get the full path of the file
             char* filePath = (char*)malloc(strlen(curr_dir_name) + strlen(fileName) + 2);
@@ -207,18 +224,36 @@ int main(int argc, char *argv[]) {
             stat(ent->d_name, &buf);
             //  check if buf is not empty
             if (buf.st_size != 0) {
-                std::cout << std::setw(10) << std::left << permissions(buf.st_mode)   //permissions
-                          << std::setw(18) << std::left << owner(buf.st_uid)             //owner
-                          << std::setw(8) << std::right << size(buf.st_size) << " "      //file size in bytes
-                          << std::setw(12) << std::left
-                          << data(buf.st_mtime)             //data of the last modification of the file
-                          << std::setw(12) << std::left
-                          << time(buf.st_mtime)             //time of the last modification of the file
-                          << std::setw(12) << std::left
-                          << name(buf.st_mode, fileName, filePath, stack, stack_size) //file name //ent->d_name
-                          << std::endl;
+                fileInfo.push_back(fileName);
+                fileInfo.push_back(permissions(buf.st_mode));
+                fileInfo.push_back(owner(buf.st_uid));
+                fileInfo.push_back(size(buf.st_size));
+                fileInfo.push_back(data(buf.st_mtime));
+                fileInfo.push_back(time(buf.st_mtime));
+                fileInfo.push_back(name(buf.st_mode, fileName, filePath, stack, stack_size));
+
+                currentDirFiles.push_back(fileInfo);
             }
         }
+
+        // sort items by fileName
+        std::sort (currentDirFiles.begin(), currentDirFiles.end(), fileNameCmp);
+
+        // print all information
+        for(const auto& fi : currentDirFiles) {
+
+            std::cout << std::setw(10) << std::left << fi[1]   //permissions
+                      << std::setw(18) << std::left << fi[2]             //owner
+                      << std::setw(8) << std::right << fi[3] << " "      //file size in bytes
+                      << std::setw(12) << std::left
+                      << fi[4]             //data of the last modification of the file
+                      << std::setw(12) << std::left
+                      << fi[5]             //time of the last modification of the file
+                      << std::setw(12) << std::left
+                      << fi[6] //file name //ent->d_name
+                      << std::endl;
+        }
+
         // close the directory
         closedir(dir);
     }
